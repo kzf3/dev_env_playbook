@@ -1,0 +1,99 @@
+---
+- hosts: localhost
+  connection: local
+  become: yes
+  tasks:
+    - name: gitを最新版にするためのdevelをインストール
+      with_items:
+        - make
+        - libcurl-devel
+        - gcc
+        - openssl-devel
+        - expat-devel
+        - gettext
+        - asciidoc
+        - xmlto
+        - perl-ExtUtils-MakeMaker
+        - autoconf
+      yum: name={{ item }} state=installed
+
+    - name: 最新版のgitをclone
+      become_method: su
+      git: repo=git@github.com:git/git.git dest=/root/git accept_hostkey=yes
+
+    - name: gitをmake configure
+      become_method: su
+      command: make configure
+      args:
+        chdir: /root/git/
+
+    - name: gitをconfigure
+      become_method: su
+      command: ./configure --prefix=/usr/local --with-curl --with-expat
+      args:
+        chdir: /root/git/
+
+    - name: gitをmake all doc
+      become_method: su
+      command: make all doc
+      args:
+        chdir: /root/git/
+
+    - name: gitをmake install
+      become_method: su
+      command: make install install-doc install-html
+      args:
+        chdir: /root/git/
+
+    - name: vimのコンパイルに必要なdevelをインストール
+      with_items:
+        - ncurses-devel
+        - libXt-devel
+        - libX11-devel
+        - atk-devel
+        - gtk2-devel
+        - lua-devel
+      yum: name={{ item }} state=installed
+
+    #- name: sed ssh_config
+    #  shell: sed -i -e "s/#   StrictHostKeyChecking ask/StrictHostKeyChecking no/g" /etc/ssh/ssh_config
+
+    - name: 最新版のvimをgit clone
+      become_method: su
+      git: repo=git@github.com:vim/vim.git dest=/usr/local/src/vim accept_hostkey=yes
+
+    - name: 最新版vimをconfigure
+      become_method: su
+      command: ./configure --enable-multibyte --with-features=huge --enable-cscope --enable-gui=gtk2 --disable-selinux --prefix=/usr/local --enable-xim --enable-fontset --enable-gpm --enable-rubyinterp --with-python-config-dir=/usr/lib/python2.6/config --enable-luainterp=yes --with-lua-prefix=/usr 
+      args:
+        chdir: /usr/local/src/vim/
+
+    - name: 最新版vimをmake
+      become_method: su
+      command: make
+      args:
+        chdir: /usr/local/src/vim/
+
+    - name: 最新版vimをmake install
+      become_method: su
+      command: make install
+      args:
+        chdir: /usr/local/src/vim/
+
+    - name: 自分のvimrcをgit clone
+      become: no
+      git: repo=git@github.com:kzf3/vimrc.git dest=/home/vagrant/vimrc accept_hostkey=yes
+
+    - name: git clone したvimrcをホームディレクトリにコピー
+      become: no
+      file: src=/home/vagrant/vimrc/.vimrc dest=/home/vagrant/.vimrc state=link
+
+    - name: .vim以下にディレクトリを作成
+      become: no
+      file: path=/home/vagrant/.vim/bundle state=directory
+
+    - name: neobundleをgit clone
+      become: no
+      git: repo=git@github.com:Shougo/neobundle.vim.git
+           dest=/home/vagrant/.vim/bundle/neobundle.vim accept_hostkey=yes
+      
