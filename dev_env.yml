@@ -96,4 +96,32 @@
       become: no
       git: repo=git@github.com:Shougo/neobundle.vim.git
            dest=/home/vagrant/.vim/bundle/neobundle.vim accept_hostkey=yes
-      
+
+    - name: localeの設定
+      command: localectl set-locale LANG=ja_JP.utf8
+
+    - name: タイムゾーンの設定
+      command: timedatectl set-timezone Asia/Tokyo
+
+    - name: dockerリポジトリのファイルを作成する
+      file: path=/etc/yum.repos.d/docker.repo state=touch
+
+    - name: dokcerのyumリポジトリの追加
+      with_items:
+        - '[dockerrepo]'
+        - 'name=Docker Repository'
+        - 'baseurl=https://yum.dockerproject.org/repo/main/centos/7/'
+        - 'enabled=1'
+        - 'gpgcheck=1'
+        - 'gpgkey=https://yum.dockerproject.org/gpg'
+      lineinfile: dest=/etc/yum.repos.d/docker.repo line={{ item }}
+
+    - name: dockerのインストール
+      yum: name=docker-engine state=installed
+
+    - name: dokcerのスタート
+      service: name=docker state=started
+
+    - name: docker自動起動設定
+      service: name=docker enabled=yes
+
