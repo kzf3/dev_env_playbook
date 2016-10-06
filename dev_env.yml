@@ -132,3 +132,24 @@
     - name: docker-composeのbinの権限を変更する
       become_method: su
       command: chmod +x /usr/local/bin/docker-compose
+    
+    - name: docker group へvagrantユーザーを追加
+      command: usermod -aG docker vagrant
+
+    - name: dockerの設定ファイルディレクトリの作成
+      become: no
+      file: path=~/.docker/ state=directory
+
+    - name: dockerの設定ファイルを作成
+      become: no
+      file: path=~/.docker/config.json state=touch
+
+    - name: dockerのデタッチキーを変更する
+      become: no
+      with_items:
+        - '{'
+        - '    "detachKeys": "ctrl-o,ctrl-p"'
+        - '}'
+      lineinfile: dest=~/.docker/config.json line={{ item }}
+
+
